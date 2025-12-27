@@ -1,11 +1,10 @@
--- [[ LoreTCS - PENALTY GOD MODE (MAGNETIC KICK) - RAYFIELD EDITION ]] --
+-- [[ LoreTCS - PENALTY SUPREME MODE ]] --
 
--- 1. CARREGANDO INTERFACE PREMIUM
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "LoreTCS Penalty ⚽",
-   LoadingTitle = "Injetando Magnetic Kick...",
+   LoadingTitle = "Injetando Supreme Hub...",
    LoadingSubtitle = "by LoreTcs",
    ConfigurationSaving = { Enabled = false }
 })
@@ -15,8 +14,9 @@ local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local savedGoalPos = nil
 local magnetEnabled = false
+local isStriking = false
 
--- 2. BUSCA A BOLA
+-- 1. BUSCA A BOLA
 local function FindTPS()
     for _, v in pairs(game:GetDescendants()) do
         if v:IsA("BasePart") and (v.Name == "TPS" or v.Name == "Ball") then
@@ -26,63 +26,109 @@ local function FindTPS()
     return nil
 end
 
--- 3. LÓGICA DO CHUTE MAGNÉTICO (HEARTBEAT)
+-- 2. FUNÇÃO "FOI EU QUE MARQUEI" (CLAIM OWNER)
+local function ClaimOwner(ball)
+    local char = player.Character
+    if ball and char and char:FindFirstChild("HumanoidRootPart") then
+        -- Simula o toque para o jogo registrar seu ID
+        firetouchinterest(ball, char.HumanoidRootPart, 0)
+        task.wait(0.02)
+        firetouchinterest(ball, char.HumanoidRootPart, 1)
+    end
+end
+
+-- 3. SISTEMA DE MOVIMENTAÇÃO (RUNSERVICE)
+local function MoverAteOGol()
+    local ball = FindTPS()
+    if not ball or not savedGoalPos then 
+        Rayfield:Notify({Title = "Aviso", Content = "Marque o gol primeiro, rlk!", Duration = 3})
+        return 
+    end
+
+    if isStriking then return end
+    isStriking = true
+
+    -- Garante que o gol seja seu antes de começar a andar
+    ClaimOwner(ball)
+
+    local conexao
+    local speed = 150
+
+    conexao = RunService.Heartbeat:Connect(function(dt)
+        if not ball or not ball.Parent or not isStriking then
+            if conexao then conexao:Disconnect() end
+            isStriking = false
+            return
+        end
+
+        local distance = (savedGoalPos - ball.Position).Magnitude
+        local direction = (savedGoalPos - ball.Position).Unit
+
+        if distance > 3 then
+            -- A bola anda sozinha sem teleportar
+            ball.Velocity = direction * speed
+            ball.CFrame = ball.CFrame + (direction * speed * dt)
+        else
+            -- Gol concluído
+            ball.Position = savedGoalPos
+            ball.Velocity = Vector3.new(0,0,0)
+            isStriking = false
+            conexao:Disconnect()
+            Rayfield:Notify({Title = "GOOOL!", Content = "Marcado em seu nome, man!", Duration = 2})
+        end
+    end)
+end
+
+-- 4. LÓGICA DO CHUTE MAGNÉTICO (PASSIVO)
 RunService.Heartbeat:Connect(function()
-    if magnetEnabled and savedGoalPos then
+    if magnetEnabled and savedGoalPos and not isStriking then
         local ball = FindTPS()
-        -- Só ativa se a bola estiver se movendo (você ou alguém chutou)
         if ball and ball.Velocity.Magnitude > 2 then
             local direction = (savedGoalPos - ball.Position).Unit
-            -- Aplica uma força certeira pro gol
-            ball.Velocity = direction * 120 
+            ball.Velocity = direction * 130
         end
     end
 end)
 
--- 4. ABAS DO MENU
-local TabMain = Window:CreateTab("⚽ Penalty", 4483345998)
-local Section = TabMain:CreateSection("Funções Magnéticas")
+-- 5. ABAS DO MENU
+local TabMain = Window:CreateTab("⚽ Funções", 4483345998)
 
 TabMain:CreateButton({
    Name = "1. Marcar Posição do Gol",
-   Info = "Fique dentro do gol e clique aqui para salvar a mira do ímã",
    Callback = function()
        savedGoalPos = player.Character.HumanoidRootPart.Position
-       Rayfield:Notify({
-          Title = "Mira Salva!",
-          Content = "O chute agora vai ser atraído para cá, rlk!",
-          Duration = 3,
-          Image = 4483345998,
-       })
+       Rayfield:Notify({Title = "Sucesso", Content = "Posição salva!", Duration = 2})
+   end,
+})
+
+TabMain:CreateButton({
+   Name = "2. Auto-Strike (Bola vai sozinha)",
+   Info = "Faz a bola andar até o gol e registra você como dono",
+   Callback = function()
+       MoverAteOGol()
    end,
 })
 
 TabMain:CreateToggle({
    Name = "Chute Magnético (AimBot)",
-   Info = "Faz a bola curvar direto pro gol quando você chuta",
    CurrentValue = false,
    Callback = function(Value)
        magnetEnabled = Value
-       local status = Value and "Ativado" or "Desativado"
-       Rayfield:Notify({Title = "Magneto", Content = "Chute Magnético: " .. status, Duration = 2})
    end,
 })
 
 local TabProt = Window:CreateTab("🛡️ Proteção", 4483345998)
 
 TabProt:CreateButton({
-   Name = "Bloquear Kick do Servidor",
-   Info = "Evita que o jogo te expulse por suspeita de hack",
+   Name = "Ativar Proteção de Kick",
    Callback = function()
        hookfunction(player.Kick, newcclosure(function() return nil end))
-       Rayfield:Notify({Title = "Protegido", Content = "Sistema de Kick desativado, man!", Duration = 5})
+       Rayfield:Notify({Title = "Protegido", Content = "Anti-Kick ativo!", Duration = 5})
    end,
 })
 
--- NOTIFICAÇÃO DE ENTRADA
 Rayfield:Notify({
-   Title = "Executado!",
-   Content = "Penalty Hub carregado na relíquia!",
+   Title = "LoreTCS Supreme",
+   Content = "Script pronto pra dominar, rlk!",
    Duration = 5,
-   Image = 4483345998,
 })
